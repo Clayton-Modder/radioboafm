@@ -1,8 +1,8 @@
 
 import React, { useMemo } from 'react';
 import { Calendar, User, Clock } from 'lucide-react';
-import { SCHEDULE } from '../constants';
-import { Program } from '../types';
+import { SCHEDULE } from '../constants.ts';
+import { Program } from '../types.ts';
 
 const Schedule: React.FC = () => {
   const currentProgram = useMemo(() => {
@@ -15,11 +15,9 @@ const Schedule: React.FC = () => {
       const start = startH * 60 + startM;
       const end = endH * 60 + endM;
 
-      // Special case for programs crossing midnight (like 19:00 to 23:59)
       if (start < end) {
         return currentTime >= start && currentTime < end;
       } else {
-        // e.g. 23:00 to 02:00
         return currentTime >= start || currentTime < end;
       }
     }) || SCHEDULE[0];

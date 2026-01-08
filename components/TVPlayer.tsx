@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
 import { Maximize, MonitorPlay, Pause, Play, Volume2, VolumeX } from 'lucide-react';
-import { TV_STREAM_URL } from '../constants';
+import { TV_STREAM_URL } from '../constants.ts';
 
 const TVPlayer: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -70,9 +70,7 @@ const TVPlayer: React.FC = () => {
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
 
-    // Keyboard Navigation for Smart TV and Desktop
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Trigger controls visibility on any key press
       handleMouseMove();
 
       switch (e.key) {
@@ -134,7 +132,6 @@ const TVPlayer: React.FC = () => {
           playsInline
         />
 
-        {/* Top Overlay: Title and Live Badge - Adjusted for mobile */}
         <div className={`absolute top-3 left-3 md:top-6 md:left-6 flex items-center gap-2 md:gap-3 transition-opacity duration-500 ${showControls ? 'opacity-100' : 'opacity-0'}`}>
           <div className="bg-red-600 px-2 py-0.5 md:px-3 md:py-1 rounded text-[8px] md:text-[10px] font-bold tracking-widest text-white shadow-lg animate-pulse whitespace-nowrap">
             AO VIVO
@@ -144,7 +141,6 @@ const TVPlayer: React.FC = () => {
           </div>
         </div>
 
-        {/* Center Play/Pause - Accessible and responsive */}
         {!isPlaying && (
           <div 
             className="absolute inset-0 flex items-center justify-center cursor-pointer bg-black/20"
@@ -156,7 +152,6 @@ const TVPlayer: React.FC = () => {
           </div>
         )}
 
-        {/* Bottom Controls Bar - Larger hit areas for TV/Mobile */}
         <div 
           className={`absolute bottom-0 left-0 right-0 p-3 md:p-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}
         >
@@ -213,7 +208,6 @@ const TVPlayer: React.FC = () => {
         </div>
       </div>
       
-      {/* Mobile Title Card (Moved outside video for small screens to avoid clutter) */}
       <div className="mt-4 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-800/30 p-4 rounded-xl border border-white/5">
         <div className="flex items-center gap-3">
           <div className="bg-indigo-600/20 p-2 rounded-lg">
@@ -232,14 +226,6 @@ const TVPlayer: React.FC = () => {
              Grade
            </button>
         </div>
-      </div>
-      
-      {/* Visual Keyboard Guide (Subtle) */}
-      <div className="mt-4 hidden lg:flex justify-center gap-6 text-[10px] text-slate-500 uppercase font-bold tracking-widest">
-        <span>[ESPAÇO] Play/Pause</span>
-        <span>[F] Tela Cheia</span>
-        <span>[M] Mudo</span>
-        <span>[setas] Volume</span>
       </div>
     </div>
   );

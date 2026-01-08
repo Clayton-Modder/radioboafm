@@ -1,19 +1,19 @@
 
 import React, { useState, useEffect } from 'react';
-import RadioPlayer from './components/RadioPlayer';
-import TVPlayer from './components/TVPlayer';
-import Schedule from './components/Schedule';
-import { SCHEDULE } from './constants';
+import RadioPlayer from './components/RadioPlayer.tsx';
+import TVPlayer from './components/TVPlayer.tsx';
+import Schedule from './components/Schedule.tsx';
+import { SCHEDULE } from './constants.ts';
 
 const App: React.FC = () => {
   const [currentProgram, setCurrentProgram] = useState(SCHEDULE[0]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate initial loader
+    // Simulação de carregador inicial
     const timer = setTimeout(() => setLoading(false), 1500);
 
-    // Update current program based on time
+    // Atualiza programa atual baseado no horário
     const updateTime = () => {
       const now = new Date();
       const currentTime = now.getHours() * 60 + now.getMinutes();
@@ -35,7 +35,7 @@ const App: React.FC = () => {
     };
 
     updateTime();
-    const interval = setInterval(updateTime, 60000); // Check every minute
+    const interval = setInterval(updateTime, 60000); // Verifica a cada minuto
 
     return () => {
       clearTimeout(timer);
@@ -47,26 +47,26 @@ const App: React.FC = () => {
     return (
       <div className="fixed inset-0 bg-slate-950 flex flex-col items-center justify-center z-[9999]">
         <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4 shadow-[0_0_20px_rgba(79,70,229,0.5)]"></div>
-        <h1 className="text-indigo-400 font-bold tracking-widest uppercase text-sm animate-pulse">Carregando Experiência Premium</h1>
+        <h1 className="text-indigo-400 font-bold tracking-widest uppercase text-sm animate-pulse">BOA FM IRECÊ</h1>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-slate-950 selection:bg-indigo-500 selection:text-white">
-      {/* Fixed Header with Radio Player */}
+      {/* Header Fixo com Player de Rádio */}
       <RadioPlayer currentProgramName={currentProgram.name} />
 
-      {/* Main Content */}
+      {/* Conteúdo Principal */}
       <main className="animate-in fade-in duration-700">
-        {/* TV Section */}
+        {/* Seção TV */}
         <TVPlayer />
 
-        {/* Schedule Section */}
+        {/* Seção Programação */}
         <Schedule />
       </main>
 
-      {/* Footer */}
+      {/* Rodapé */}
       <footer className="bg-slate-900 border-t border-white/5 py-12 px-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="text-center md:text-left">

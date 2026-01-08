@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Pause, Volume2, VolumeX, Radio, Share2, Users } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Activity } from 'lucide-react';
 import Hls from 'hls.js';
 import { RADIO_STREAM_URL } from '../constants';
 import LocationBadge from './LocationBadge';
@@ -13,9 +13,69 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentProgramName }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.8);
   const [isMuted, setIsMuted] = useState(false);
-  const [listeners, setListeners] = useState(1248);
+  const [audioLevels, setAudioLevels] = useState<number[]>(new Array(8).fill(2));
+  
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animationRef = useRef<number | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+
+  // Setup Audio Analysis
+  const setupAudioAnalysis = () => {
+    if (!audioRef.current || audioContextRef.current) return;
+
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioContextClass();
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 64;
+      
+      const source = ctx.createMediaElementSource(audioRef.current);
+      source.connect(analyser);
+      analyser.connect(ctx.destination);
+
+      audioContextRef.current = ctx;
+      analyserRef.current = analyser;
+      sourceRef.current = source;
+    } catch (e) {
+      console.error("Audio Analysis failed:", e);
+    }
+  };
+
+  const updateLevels = () => {
+    if (!analyserRef.current || !isPlaying) {
+      setAudioLevels(new Array(8).fill(2));
+      return;
+    }
+
+    const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+    analyserRef.current.getByteFrequencyData(dataArray);
+
+    const newLevels = [];
+    for (let i = 0; i < 8; i++) {
+      const val = (dataArray[i * 2] / 255) * 100;
+      newLevels.push(Math.max(4, val));
+    }
+    setAudioLevels(newLevels);
+    animationRef.current = requestAnimationFrame(updateLevels);
+  };
+
+  useEffect(() => {
+    if (isPlaying) {
+      if (audioContextRef.current?.state === 'suspended') {
+        audioContextRef.current.resume();
+      }
+      animationRef.current = requestAnimationFrame(updateLevels);
+    } else {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      setAudioLevels(new Array(8).fill(4));
+    }
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, [isPlaying]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -24,65 +84,32 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentProgramName }) => {
     }
   }, [volume, isMuted]);
 
-  // Simulação de flutuação de ouvintes em tempo real para dinamismo visual
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setListeners(prev => {
-        const change = Math.floor(Math.random() * 5) - 2; 
-        return Math.max(900, prev + change);
-      });
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
-
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio) return;
 
     if (isPlaying) {
       audio.pause();
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
-      audio.src = '';
       setIsPlaying(false);
     } else {
+      setupAudioAnalysis();
+      
       const url = RADIO_STREAM_URL;
       if (url.includes('.m3u8') && Hls.isSupported()) {
-        const hls = new Hls();
-        hls.loadSource(url);
-        hls.attachMedia(audio);
-        hlsRef.current = hls;
-        hls.on(Hls.Events.MANIFEST_PARSED, () => audio.play());
+        if (!hlsRef.current) {
+          const hls = new Hls();
+          hls.loadSource(url);
+          hls.attachMedia(audio);
+          hlsRef.current = hls;
+          hls.on(Hls.Events.MANIFEST_PARSED, () => audio.play());
+        } else {
+          audio.play();
+        }
       } else {
-        audio.src = url;
-        audio.play().catch(() => {
-           // Fallback silent fail
-        });
+        if (!audio.src || audio.src === '') audio.src = url;
+        audio.play().catch(e => console.error("Play error:", e));
       }
       setIsPlaying(true);
-    }
-  };
-
-  const handleShare = async () => {
-    const currentUrl = window.location.href.startsWith('http') 
-      ? window.location.href 
-      : 'https://redeboa.com.br';
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Boa FM Irecê',
-          text: `Ouvindo agora: ${currentProgramName} na Boa FM Irecê!`,
-          url: currentUrl,
-        });
-      } catch (error) {
-        console.error('Error sharing:', error);
-      }
-    } else {
-      navigator.clipboard.writeText(currentUrl);
-      alert('Link copiado para a área de transferência!');
     }
   };
 
@@ -92,56 +119,66 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentProgramName }) => {
         
         {/* Logo & Info */}
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg flex-shrink-0 overflow-hidden shadow-lg border border-white/10">
-            <img 
-              src="https://redeboa.com.br/wp-content/uploads/2024/12/logo_boafmirece-1024x1024.png" 
-              alt="Logo" 
-              className="w-full h-full object-cover"
-            />
+          <div className="relative group">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg flex-shrink-0 overflow-hidden shadow-lg border border-white/10 relative z-10">
+              <img 
+                src="https://redeboa.com.br/wp-content/uploads/2024/12/logo_boafmirece-1024x1024.png" 
+                alt="Logo" 
+                className={`w-full h-full object-cover transition-transform duration-500 ${isPlaying ? 'scale-110' : ''}`}
+              />
+            </div>
+            {isPlaying && (
+              <div className="absolute inset-0 bg-indigo-500/30 blur-xl rounded-full animate-pulse z-0" />
+            )}
           </div>
+          
           <div className="hidden xs:block">
-            <h1 className="text-sm sm:text-lg font-bold text-white tracking-tight leading-none mb-1">BOA FM IRECÊ</h1>
+            <h1 className="text-sm sm:text-lg font-bold text-white tracking-tight leading-none mb-1 flex items-center gap-2">
+              BOA FM IRECÊ
+              {isPlaying && <Activity size={14} className="text-emerald-400 animate-pulse" />}
+            </h1>
             <div className="flex items-center gap-2">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
               </span>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mr-2">AO VIVO</span>
-              <LocationBadge />
-              
-              {/* Contador de Ouvintes Premium Desktop */}
-              <div className="hidden sm:flex items-center gap-2 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 ml-1 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
-                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-                <span className="text-[10px] font-black text-emerald-400 tabular-nums uppercase tracking-tighter">
-                  {listeners.toLocaleString()} <span className="opacity-60">ouvintes</span>
-                </span>
-              </div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">AO VIVO</span>
             </div>
           </div>
         </div>
 
-        {/* Current Program - Desktop Only */}
+        {/* Visualizer & Current Program (Centralizado) */}
         <div className="hidden lg:flex flex-col items-center justify-center flex-1 px-4 text-center overflow-hidden">
-          <div className="flex items-center gap-2 text-indigo-400 mb-0.5">
-            <Radio size={14} className="animate-pulse" />
-            <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">No Ar</span>
+          <div className="flex items-end gap-[3px] h-6 mb-2">
+            {audioLevels.map((level, i) => (
+              <div 
+                key={i} 
+                className="w-1.5 rounded-full bg-gradient-to-t from-indigo-600 via-indigo-400 to-emerald-400 transition-all duration-75"
+                style={{ height: `${level}%`, opacity: isPlaying ? 0.8 + (level/200) : 0.2 }}
+              />
+            ))}
           </div>
-          <p className="text-sm font-medium text-white truncate w-full max-w-[300px]">{currentProgramName}</p>
+          <p className="text-xs font-black text-white truncate w-full max-w-[300px] uppercase tracking-widest">{currentProgramName}</p>
         </div>
 
-        {/* Controls */}
+        {/* Controls Area */}
         <div className="flex items-center gap-3 sm:gap-6 ml-auto">
-          <div className="flex items-center gap-3 bg-white/5 rounded-full px-2 py-1.5 sm:px-4 sm:py-2 border border-white/5">
+          {/* Localização Badge */}
+          <div className="hidden sm:block">
+            <LocationBadge />
+          </div>
+
+          <div className="flex items-center gap-3 bg-white/5 rounded-full px-2 py-1.5 sm:px-4 sm:py-2 border border-white/5 ring-1 ring-white/10">
             <button 
               onClick={togglePlay}
-              className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 active:scale-90"
+              className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/40 active:scale-90 transition-all"
             >
               {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-0.5" />}
             </button>
 
             {/* Volume Desktop */}
             <div className="hidden md:flex items-center gap-3 ml-2 border-l border-white/10 pl-4">
-              <button onClick={() => setIsMuted(!isMuted)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setIsMuted(!isMuted)} className="text-slate-400 hover:text-white transition-colors">
                 {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
               </button>
               <input 
@@ -149,30 +186,24 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentProgramName }) => {
                 min="0" max="1" step="0.05"
                 value={isMuted ? 0 : volume}
                 onChange={(e) => setVolume(parseFloat(e.target.value))}
-                className="w-20 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                className="w-20 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
               />
             </div>
           </div>
-
-          <button 
-            onClick={handleShare}
-            className="p-2 sm:p-2.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-full transition-colors"
-            title="Compartilhar"
-          >
-            <Share2 size={20} />
-          </button>
           
+          {/* Mobile Status Only */}
           <div className="xs:hidden flex flex-col items-end">
-            {/* Contador de Ouvintes Mobile - Verde para destaque */}
-            <div className="flex items-center gap-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 mb-1">
-               <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" />
-               <span className="text-[10px] font-black text-emerald-400 tabular-nums">{listeners}</span>
+             <div className="bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+               <span className="text-[9px] font-black text-emerald-400 tracking-widest uppercase">ON AIR</span>
             </div>
-            <span className="text-[10px] font-bold text-red-500 animate-pulse">LIVE</span>
           </div>
         </div>
       </div>
-      <audio ref={audioRef} crossOrigin="anonymous" />
+      <audio 
+        ref={audioRef} 
+        crossOrigin="anonymous" 
+        style={{ display: 'none' }}
+      />
     </header>
   );
 };

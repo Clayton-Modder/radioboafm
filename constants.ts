@@ -5,10 +5,10 @@ export const RADIO_STREAM_URL = 'https://cast.radiu.live:9601/stream?17679107905
 export const TV_STREAM_URL = 'https://a.cdni.live/boafmirece/boafmirece/chunklist_w1535480119.m3u8';
 
 export const MODELS = {
-  FAST: 'gemini-2.5-flash-lite-latest',
+  FAST: 'gemini-3-flash-preview',
   THINKING: 'gemini-3-pro-preview',
   IMAGE: 'gemini-2.5-flash-image',
-  MAPS: 'gemini-2.5-flash' // Alterado de gemini-2.5-flash-latest para gemini-2.5-flash
+  MAPS: 'gemini-2.5-flash'
 };
 
 export const SCHEDULE: Program[] = [

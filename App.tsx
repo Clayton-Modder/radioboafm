@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import RadioPlayer from './components/RadioPlayer';
 import TVPlayer from './components/TVPlayer';
 import Schedule from './components/Schedule';
-import AIAssistant from './components/AIAssistant';
 import { SCHEDULE } from './constants';
 
 const App: React.FC = () => {
@@ -54,9 +53,6 @@ const App: React.FC = () => {
         <TVPlayer currentProgramName={currentProgram.name} />
         <Schedule />
       </main>
-
-      {/* AI Assistant */}
-      <AIAssistant />
 
       {/* Footer Profissional */}
       <footer className="bg-slate-950 border-t border-white/5 mt-12">

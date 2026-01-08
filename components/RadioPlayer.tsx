@@ -1,8 +1,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Radio } from 'lucide-react';
 import Hls from 'hls.js';
 import { RADIO_STREAM_URL } from '../constants';
+import LocationBadge from './LocationBadge';
 
 interface RadioPlayerProps {
   currentProgramName: string;
@@ -22,14 +23,6 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentProgramName }) => {
     }
   }, [volume, isMuted]);
 
-  useEffect(() => {
-    return () => {
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-      }
-    };
-  }, []);
-
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -41,97 +34,91 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentProgramName }) => {
         hlsRef.current = null;
       }
       audio.src = '';
-      audio.load();
       setIsPlaying(false);
     } else {
       const url = RADIO_STREAM_URL;
-      
       if (url.includes('.m3u8') && Hls.isSupported()) {
-        if (hlsRef.current) hlsRef.current.destroy();
         const hls = new Hls();
         hls.loadSource(url);
         hls.attachMedia(audio);
         hlsRef.current = hls;
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-          audio.play().catch(e => console.error("HLS Play error:", e));
-        });
+        hls.on(Hls.Events.MANIFEST_PARSED, () => audio.play());
       } else {
         audio.src = url;
-        audio.load();
-        audio.play().catch(err => {
-          console.error("Direct Play error:", err);
-          if (Hls.isSupported()) {
-            const hls = new Hls();
-            hls.loadSource(url);
-            hls.attachMedia(audio);
-            hlsRef.current = hls;
-            hls.on(Hls.Events.MANIFEST_PARSED, () => {
-              audio.play().catch(e => console.error("HLS Fallback Play error:", e));
-            });
-          }
+        audio.play().catch(() => {
+           // Fallback silent fail
         });
       }
       setIsPlaying(true);
     }
   };
 
-  const toggleMute = () => setIsMuted(!isMuted);
-
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-white/10 shadow-lg px-4 md:px-8 py-3">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+    <header className="fixed top-0 left-0 right-0 z-[100] glass border-b border-white/5 shadow-2xl">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between gap-4">
         
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 md:w-14 md:h-14 bg-white rounded-lg overflow-hidden flex items-center justify-center shadow-indigo-500/20 shadow-lg">
+        {/* Logo & Info */}
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-lg flex-shrink-0 overflow-hidden shadow-lg border border-white/10">
             <img 
               src="https://redeboa.com.br/wp-content/uploads/2024/12/logo_boafmirece-1024x1024.png" 
-              alt="Rede Boa FM" 
+              alt="Logo" 
               className="w-full h-full object-cover"
             />
           </div>
-          <div>
-            <h1 className="text-lg md:text-xl font-bold text-white leading-tight">BOA FM IRECÊ</h1>
+          <div className="hidden xs:block">
+            <h1 className="text-sm sm:text-lg font-bold text-white tracking-tight leading-none mb-1">BOA FM IRECÊ</h1>
             <div className="flex items-center gap-2">
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-600"></span>
               </span>
-              <p className="text-[10px] md:text-xs font-medium text-slate-400 uppercase tracking-wider">AO VIVO</p>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mr-2">AO VIVO</span>
+              <LocationBadge />
             </div>
           </div>
         </div>
 
-        <div className="hidden lg:block flex-1 px-12 text-center">
-          <p className="text-xs text-slate-400 uppercase tracking-widest font-semibold">No Ar na Rádio</p>
-          <p className="text-sm text-white font-medium truncate max-w-xs mx-auto">{currentProgramName}</p>
+        {/* Current Program - Desktop Only */}
+        <div className="hidden lg:flex flex-col items-center justify-center flex-1 px-4 text-center overflow-hidden">
+          <div className="flex items-center gap-2 text-indigo-400 mb-0.5">
+            <Radio size={14} className="animate-pulse" />
+            <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">No Ar</span>
+          </div>
+          <p className="text-sm font-medium text-white truncate w-full max-w-[300px]">{currentProgramName}</p>
         </div>
 
-        <div className="flex items-center gap-4 md:gap-6 bg-slate-900/50 rounded-full px-4 py-2 border border-white/5">
-          <button 
-            onClick={togglePlay}
-            aria-label={isPlaying ? "Pause Radio" : "Play Radio"}
-            className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-indigo-600 text-white hover:bg-indigo-700 transition-all shadow-xl active:scale-95"
-          >
-            {isPlaying ? <Pause fill="currentColor" size={24} /> : <Play fill="currentColor" size={24} className="ml-1" />}
-          </button>
-
-          <div className="flex items-center gap-3">
-            <button onClick={toggleMute} className="text-slate-300 hover:text-white transition-colors">
-              {isMuted || volume === 0 ? <VolumeX size={20} /> : <Volume2 size={20} />}
+        {/* Controls */}
+        <div className="flex items-center gap-3 sm:gap-6 ml-auto">
+          <div className="flex items-center gap-3 bg-white/5 rounded-full px-2 py-1.5 sm:px-4 sm:py-2 border border-white/5">
+            <button 
+              onClick={togglePlay}
+              className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 active:scale-90"
+            >
+              {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-0.5" />}
             </button>
-            <input 
-              type="range" 
-              min="0" 
-              max="1" 
-              step="0.01" 
-              value={volume} 
-              onChange={(e) => setVolume(parseFloat(e.target.value))}
-              className="w-20 md:w-28 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-            />
+
+            {/* Volume Desktop */}
+            <div className="hidden md:flex items-center gap-3 ml-2 border-l border-white/10 pl-4">
+              <button onClick={() => setIsMuted(!isMuted)} className="text-slate-400 hover:text-white">
+                {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+              </button>
+              <input 
+                type="range" 
+                min="0" max="1" step="0.05"
+                value={isMuted ? 0 : volume}
+                onChange={(e) => setVolume(parseFloat(e.target.value))}
+                className="w-20 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+              />
+            </div>
+          </div>
+          
+          <div className="xs:hidden flex flex-col items-end">
+            <span className="text-[10px] font-bold text-red-500 animate-pulse">LIVE</span>
           </div>
         </div>
       </div>
-      <audio ref={audioRef} crossOrigin="anonymous" preload="none" />
+      <audio ref={audioRef} crossOrigin="anonymous" />
     </header>
   );
 };

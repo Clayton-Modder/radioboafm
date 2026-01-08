@@ -1,5 +1,7 @@
 {
   "name": "Boa FM Irecê - Rádio & TV Online",
   "description": "Plataforma oficial da Boa FM Irecê. Streaming de Rádio e TV Online com qualidade premium.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "geolocation"
+  ]
 }

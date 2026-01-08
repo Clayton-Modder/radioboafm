@@ -1,9 +1,15 @@
 
 import { Program } from './types';
 
-// Updated Radio Stream URL provided by the user
 export const RADIO_STREAM_URL = 'https://cast.radiu.live:9601/stream?1767910790579';
 export const TV_STREAM_URL = 'https://a.cdni.live/boafmirece/boafmirece/chunklist_w1535480119.m3u8';
+
+export const MODELS = {
+  FAST: 'gemini-2.5-flash-lite-latest',
+  THINKING: 'gemini-3-pro-preview',
+  IMAGE: 'gemini-2.5-flash-image',
+  MAPS: 'gemini-2.5-flash-latest'
+};
 
 export const SCHEDULE: Program[] = [
   {

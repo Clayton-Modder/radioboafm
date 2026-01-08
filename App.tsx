@@ -1,19 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import RadioPlayer from './components/RadioPlayer.tsx';
-import TVPlayer from './components/TVPlayer.tsx';
-import Schedule from './components/Schedule.tsx';
-import { SCHEDULE } from './constants.ts';
+import RadioPlayer from './components/RadioPlayer';
+import TVPlayer from './components/TVPlayer';
+import Schedule from './components/Schedule';
+import { SCHEDULE } from './constants';
 
 const App: React.FC = () => {
   const [currentProgram, setCurrentProgram] = useState(SCHEDULE[0]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulação de carregador inicial
     const timer = setTimeout(() => setLoading(false), 1500);
 
-    // Atualiza programa atual baseado no horário
     const updateTime = () => {
       const now = new Date();
       const currentTime = now.getHours() * 60 + now.getMinutes();
@@ -35,7 +33,7 @@ const App: React.FC = () => {
     };
 
     updateTime();
-    const interval = setInterval(updateTime, 60000); // Verifica a cada minuto
+    const interval = setInterval(updateTime, 60000);
 
     return () => {
       clearTimeout(timer);
@@ -53,20 +51,14 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 selection:bg-indigo-500 selection:text-white">
-      {/* Header Fixo com Player de Rádio */}
+    <div className="min-h-screen bg-slate-950 selection:bg-indigo-500 selection:text-white text-slate-50">
       <RadioPlayer currentProgramName={currentProgram.name} />
 
-      {/* Conteúdo Principal */}
       <main className="animate-in fade-in duration-700">
-        {/* Seção TV */}
         <TVPlayer />
-
-        {/* Seção Programação */}
         <Schedule />
       </main>
 
-      {/* Rodapé */}
       <footer className="bg-slate-900 border-t border-white/5 py-12 px-8">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="text-center md:text-left">

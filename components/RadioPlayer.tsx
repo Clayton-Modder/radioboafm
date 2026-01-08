@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import Hls from 'hls.js';
-import { RADIO_STREAM_URL } from '../constants.ts';
+import { RADIO_STREAM_URL } from '../constants';
 
 interface RadioPlayerProps {
   currentProgramName: string;
@@ -129,14 +129,8 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentProgramName }) => {
               className="w-20 md:w-28 h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
             />
           </div>
-          
-          <div className="hidden sm:flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full text-[10px] font-bold text-white border border-white/5">
-            <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-            LIVE
-          </div>
         </div>
       </div>
-      
       <audio ref={audioRef} crossOrigin="anonymous" preload="none" />
     </header>
   );

@@ -1,8 +1,8 @@
 
 import React, { useMemo } from 'react';
 import { Calendar, User, Clock } from 'lucide-react';
-import { SCHEDULE } from '../constants.ts';
-import { Program } from '../types.ts';
+import { SCHEDULE } from '../constants';
+import { Program } from '../types';
 
 const Schedule: React.FC = () => {
   const currentProgram = useMemo(() => {
@@ -30,9 +30,6 @@ const Schedule: React.FC = () => {
           <Calendar className="text-indigo-400" />
           <h2 className="text-2xl font-bold text-white uppercase tracking-tight">Programação Rádio</h2>
         </div>
-        <div className="text-xs font-semibold text-slate-400 uppercase tracking-widest hidden sm:block">
-          Grade Semanal
-        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -45,7 +42,7 @@ const Schedule: React.FC = () => {
               className={`relative rounded-2xl overflow-hidden transition-all duration-500 group border flex flex-col ${
                 isActive 
                   ? 'bg-indigo-600/10 border-indigo-500 shadow-indigo-500/20 shadow-2xl scale-[1.02]' 
-                  : 'bg-slate-800/40 border-white/5 hover:border-white/10 hover:bg-slate-800/60'
+                  : 'bg-slate-800/40 border-white/5 hover:border-white/10'
               }`}
             >
               {isActive && (
@@ -70,7 +67,7 @@ const Schedule: React.FC = () => {
                   <span className="text-xs font-bold">{program.startTime} - {program.endTime}</span>
                 </div>
 
-                <h3 className={`text-lg font-bold mb-1 leading-tight ${isActive ? 'text-white' : 'text-slate-100'}`}>
+                <h3 className={`text-lg font-bold mb-1 leading-tight text-white`}>
                   {program.name}
                 </h3>
 

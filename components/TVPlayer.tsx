@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
 import { Maximize, MonitorPlay, Pause, Play, Volume2, VolumeX } from 'lucide-react';
-import { TV_STREAM_URL } from '../constants.ts';
+import { TV_STREAM_URL } from '../constants';
 
 const TVPlayer: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -26,30 +26,11 @@ const TVPlayer: React.FC = () => {
   const toggleFullscreen = useCallback(() => {
     if (containerRef.current) {
       if (!document.fullscreenElement) {
-        containerRef.current.requestFullscreen().catch(err => {
-          console.error(`Error attempting to enable full-screen mode: ${err.message}`);
-        });
+        containerRef.current.requestFullscreen();
       } else {
         document.exitFullscreen();
       }
     }
-  }, []);
-
-  const adjustVolume = useCallback((delta: number) => {
-    setVolume(prev => {
-      const newVol = Math.min(1, Math.max(0, prev + delta));
-      if (videoRef.current) videoRef.current.volume = newVol;
-      if (newVol > 0) setIsMuted(false);
-      return newVol;
-    });
-  }, []);
-
-  const toggleMute = useCallback(() => {
-    setIsMuted(prev => {
-      const newState = !prev;
-      if (videoRef.current) videoRef.current.muted = newState;
-      return newState;
-    });
   }, []);
 
   useEffect(() => {
@@ -70,44 +51,11 @@ const TVPlayer: React.FC = () => {
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      handleMouseMove();
-
-      switch (e.key) {
-        case ' ':
-        case 'Enter':
-          e.preventDefault();
-          togglePlay();
-          break;
-        case 'f':
-        case 'F':
-          e.preventDefault();
-          toggleFullscreen();
-          break;
-        case 'm':
-        case 'M':
-          e.preventDefault();
-          toggleMute();
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          adjustVolume(0.1);
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          adjustVolume(-0.1);
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-
     return () => {
       video.removeEventListener('play', handlePlay);
       video.removeEventListener('pause', handlePause);
-      window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [togglePlay, toggleFullscreen, toggleMute, adjustVolume]);
+  }, []);
 
   const handleMouseMove = () => {
     setShowControls(true);
@@ -141,67 +89,23 @@ const TVPlayer: React.FC = () => {
           </div>
         </div>
 
-        {!isPlaying && (
-          <div 
-            className="absolute inset-0 flex items-center justify-center cursor-pointer bg-black/20"
-            onClick={togglePlay}
-          >
-            <div className="bg-white/20 backdrop-blur-md p-4 md:p-6 rounded-full border border-white/30 scale-90 md:scale-100 hover:scale-110 transition-transform">
-              <Play fill="white" className="text-white w-8 h-8 md:w-12 md:h-12 ml-1" />
-            </div>
-          </div>
-        )}
-
         <div 
           className={`absolute bottom-0 left-0 right-0 p-3 md:p-6 bg-gradient-to-t from-black/90 via-black/50 to-transparent transition-opacity duration-300 ${showControls ? 'opacity-100' : 'opacity-0'}`}
         >
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3 md:gap-6">
-              <button 
-                onClick={togglePlay}
-                aria-label={isPlaying ? "Pause TV" : "Play TV"}
-                className="text-white hover:text-indigo-400 transition-colors bg-white/10 p-2 md:p-3 rounded-full border border-white/10"
-              >
-                {isPlaying ? <Pause size={24} className="md:w-7 md:h-7" /> : <Play size={24} className="md:w-7 md:h-7" />}
+              <button onClick={togglePlay} className="text-white hover:text-indigo-400 transition-colors bg-white/10 p-2 md:p-3 rounded-full border border-white/10">
+                {isPlaying ? <Pause size={24} /> : <Play size={24} />}
               </button>
-              
               <div className="hidden sm:block">
                 <p className="text-white/60 text-[10px] font-semibold uppercase tracking-widest mb-0.5">TV Online</p>
-                <h4 className="text-white font-bold text-sm md:text-lg truncate max-w-[200px] lg:max-w-md">Assista a Boa FM Irecê</h4>
+                <h4 className="text-white font-bold text-sm md:text-lg">Assista a Boa FM Irecê</h4>
               </div>
             </div>
 
             <div className="flex items-center gap-2 md:gap-4">
-              <div className="flex items-center gap-2 bg-white/5 px-2 py-1 rounded-full border border-white/5">
-                <button 
-                  onClick={toggleMute}
-                  aria-label={isMuted ? "Unmute TV" : "Mute TV"}
-                  className="text-white/80 hover:text-white transition-colors p-1"
-                >
-                  {isMuted || volume === 0 ? <VolumeX size={20} className="md:w-6 md:h-6" /> : <Volume2 size={20} className="md:w-6 md:h-6" />}
-                </button>
-                <input 
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value={isMuted ? 0 : volume}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value);
-                    setVolume(val);
-                    if (videoRef.current) videoRef.current.volume = val;
-                    setIsMuted(val === 0);
-                  }}
-                  className="hidden md:block w-16 lg:w-24 h-1 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                />
-              </div>
-
-              <button 
-                onClick={toggleFullscreen}
-                aria-label="Toggle Fullscreen TV"
-                className="text-white/80 hover:text-white transition-colors bg-white/10 p-2 md:p-3 rounded-full border border-white/10"
-              >
-                <Maximize size={20} className="md:w-6 md:h-6" />
+               <button onClick={toggleFullscreen} className="text-white/80 hover:text-white transition-colors bg-white/10 p-2 md:p-3 rounded-full border border-white/10">
+                <Maximize size={20} />
               </button>
             </div>
           </div>
@@ -219,11 +123,8 @@ const TVPlayer: React.FC = () => {
           </div>
         </div>
         <div className="flex gap-2">
-           <button className="flex-1 md:flex-none px-4 md:px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors text-xs md:text-sm uppercase tracking-wider">
+           <button className="flex-1 md:flex-none px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors text-xs uppercase tracking-wider">
              Compartilhar
-           </button>
-           <button className="flex-1 md:flex-none px-4 md:px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-lg transition-colors text-xs md:text-sm uppercase tracking-wider">
-             Grade
            </button>
         </div>
       </div>

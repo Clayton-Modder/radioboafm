@@ -1,6 +1,5 @@
 
 import React, { useState, useEffect } from 'react';
-import { MapPin, Loader2 } from 'lucide-center'; // Mantendo a consistência mas corrigido se houver typo
 import { MapPin as MapPinIcon, Loader2 as LoaderIcon } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import { MODELS } from '../constants';
@@ -21,7 +20,6 @@ const LocationBadge: React.FC = () => {
 
       navigator.geolocation.getCurrentPosition(async (position) => {
         try {
-          // Usando o modelo gemini-2.5-flash conforme as diretrizes para Maps Grounding
           const response = await ai.models.generateContent({
             model: MODELS.MAPS,
             contents: "Onde eu estou? Responda apenas o nome da Cidade e o Estado de forma curta, por exemplo: Irecê, BA.",

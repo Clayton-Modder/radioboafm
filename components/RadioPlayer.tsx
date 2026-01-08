@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Pause, Volume2, VolumeX, Radio, Share2 } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Radio, Share2, Users } from 'lucide-react';
 import Hls from 'hls.js';
 import { RADIO_STREAM_URL } from '../constants';
 import LocationBadge from './LocationBadge';
@@ -13,6 +13,7 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentProgramName }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.8);
   const [isMuted, setIsMuted] = useState(false);
+  const [listeners, setListeners] = useState(1248);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const hlsRef = useRef<Hls | null>(null);
 
@@ -22,6 +23,17 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentProgramName }) => {
       audioRef.current.muted = isMuted;
     }
   }, [volume, isMuted]);
+
+  // Simulação de flutuação de ouvintes em tempo real para dinamismo visual
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setListeners(prev => {
+        const change = Math.floor(Math.random() * 5) - 2; 
+        return Math.max(900, prev + change);
+      });
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
   const togglePlay = () => {
     const audio = audioRef.current;
@@ -54,7 +66,6 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentProgramName }) => {
   };
 
   const handleShare = async () => {
-    // Garante uma URL válida, especialmente em ambientes de preview/iframe
     const currentUrl = window.location.href.startsWith('http') 
       ? window.location.href 
       : 'https://redeboa.com.br';
@@ -70,7 +81,6 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentProgramName }) => {
         console.error('Error sharing:', error);
       }
     } else {
-      // Fallback: Copy to clipboard
       navigator.clipboard.writeText(currentUrl);
       alert('Link copiado para a área de transferência!');
     }
@@ -98,6 +108,14 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentProgramName }) => {
               </span>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mr-2">AO VIVO</span>
               <LocationBadge />
+              
+              {/* Contador de Ouvintes Premium Desktop */}
+              <div className="hidden sm:flex items-center gap-2 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 ml-1 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+                <span className="text-[10px] font-black text-emerald-400 tabular-nums uppercase tracking-tighter">
+                  {listeners.toLocaleString()} <span className="opacity-60">ouvintes</span>
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -145,6 +163,11 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentProgramName }) => {
           </button>
           
           <div className="xs:hidden flex flex-col items-end">
+            {/* Contador de Ouvintes Mobile - Verde para destaque */}
+            <div className="flex items-center gap-1.5 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 mb-1">
+               <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" />
+               <span className="text-[10px] font-black text-emerald-400 tabular-nums">{listeners}</span>
+            </div>
             <span className="text-[10px] font-bold text-red-500 animate-pulse">LIVE</span>
           </div>
         </div>

@@ -1,10 +1,14 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Hls from 'hls.js';
-import { Maximize, MonitorPlay, Pause, Play, Volume2, VolumeX, Share2 } from 'lucide-react';
+import { Maximize, MonitorPlay, Pause, Play, Share2 } from 'lucide-react';
 import { TV_STREAM_URL } from '../constants';
 
-const TVPlayer: React.FC = () => {
+interface TVPlayerProps {
+  currentProgramName: string;
+}
+
+const TVPlayer: React.FC<TVPlayerProps> = ({ currentProgramName }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -49,6 +53,27 @@ const TVPlayer: React.FC = () => {
     controlsTimeout.current = window.setTimeout(() => {
       if (isPlaying) setShowControls(false);
     }, 3000);
+  };
+
+  const handleShare = async () => {
+    const currentUrl = window.location.href.startsWith('http') 
+      ? window.location.href 
+      : 'https://redeboa.com.br';
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Boa FM TV',
+          text: `Assistindo agora: ${currentProgramName} na Boa FM TV Online!`,
+          url: currentUrl,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      navigator.clipboard.writeText(currentUrl);
+      alert('Link copiado para a área de transferência!');
+    }
   };
 
   return (
@@ -106,13 +131,24 @@ const TVPlayer: React.FC = () => {
           <div className="bg-indigo-600/20 p-3 rounded-xl border border-indigo-500/20">
             <MonitorPlay className="text-indigo-400" size={28} />
           </div>
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Canal Digital</p>
-            <h2 className="text-white font-bold text-lg sm:text-xl truncate leading-tight">Assista Agora: Boa FM TV</h2>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+              </span>
+              <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">No Ar Agora</p>
+            </div>
+            <h2 className="text-white font-bold text-lg sm:text-xl truncate leading-tight">
+              {currentProgramName}
+            </h2>
           </div>
         </div>
         <div className="flex sm:justify-end gap-3">
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider border border-white/5">
+          <button 
+            onClick={handleShare}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider border border-white/5"
+          >
             <Share2 size={16} />
             <span className="hidden xs:inline">Compartilhar</span>
           </button>

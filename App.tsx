@@ -51,7 +51,7 @@ const App: React.FC = () => {
 
       {/* Conteúdo com Fade In */}
       <main className="flex-1 animate-in fade-in duration-1000 slide-in-from-bottom-4">
-        <TVPlayer />
+        <TVPlayer currentProgramName={currentProgram.name} />
         <Schedule />
       </main>
 

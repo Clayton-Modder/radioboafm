@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Pause, Volume2, VolumeX, Radio } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Radio, Share2 } from 'lucide-react';
 import Hls from 'hls.js';
 import { RADIO_STREAM_URL } from '../constants';
 import LocationBadge from './LocationBadge';
@@ -50,6 +50,29 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentProgramName }) => {
         });
       }
       setIsPlaying(true);
+    }
+  };
+
+  const handleShare = async () => {
+    // Garante uma URL válida, especialmente em ambientes de preview/iframe
+    const currentUrl = window.location.href.startsWith('http') 
+      ? window.location.href 
+      : 'https://redeboa.com.br';
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Boa FM Irecê',
+          text: `Ouvindo agora: ${currentProgramName} na Boa FM Irecê!`,
+          url: currentUrl,
+        });
+      } catch (error) {
+        console.error('Error sharing:', error);
+      }
+    } else {
+      // Fallback: Copy to clipboard
+      navigator.clipboard.writeText(currentUrl);
+      alert('Link copiado para a área de transferência!');
     }
   };
 
@@ -112,6 +135,14 @@ const RadioPlayer: React.FC<RadioPlayerProps> = ({ currentProgramName }) => {
               />
             </div>
           </div>
+
+          <button 
+            onClick={handleShare}
+            className="p-2 sm:p-2.5 text-slate-400 hover:text-white hover:bg-white/5 rounded-full transition-colors"
+            title="Compartilhar"
+          >
+            <Share2 size={20} />
+          </button>
           
           <div className="xs:hidden flex flex-col items-end">
             <span className="text-[10px] font-bold text-red-500 animate-pulse">LIVE</span>

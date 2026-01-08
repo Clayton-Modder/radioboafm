@@ -8,7 +8,7 @@ export const MODELS = {
   FAST: 'gemini-2.5-flash-lite-latest',
   THINKING: 'gemini-3-pro-preview',
   IMAGE: 'gemini-2.5-flash-image',
-  MAPS: 'gemini-2.5-flash-latest'
+  MAPS: 'gemini-2.5-flash' // Alterado de gemini-2.5-flash-latest para gemini-2.5-flash
 };
 
 export const SCHEDULE: Program[] = [

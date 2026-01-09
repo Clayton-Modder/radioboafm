@@ -4,6 +4,8 @@ import RadioPlayer from './components/RadioPlayer';
 import TVPlayer from './components/TVPlayer';
 import Schedule from './components/Schedule';
 import CommunityChat from './components/CommunityChat';
+import PollSection from './components/PollSection';
+import AIAssistant from './components/AIAssistant';
 import { SCHEDULE } from './constants';
 
 const App: React.FC = () => {
@@ -46,16 +48,22 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#020617]">
-      {/* Header Fixo */}
+      {/* Header Fixo com Radio Player */}
       <RadioPlayer currentProgramName={currentProgram.name} />
 
-      {/* Conteúdo com Fade In */}
-      <main className="flex-1 animate-in fade-in duration-1000 slide-in-from-bottom-4">
+      {/* Conteúdo Principal */}
+      <main className="flex-1 animate-in fade-in duration-1000 slide-in-from-bottom-4 pt-4">
         <TVPlayer currentProgramName={currentProgram.name} />
         <Schedule />
+        
+        {/* Nova Seção de Votação */}
+        <PollSection />
       </main>
 
-      {/* Chat da Comunidade */}
+      {/* Assistente IA Flutuante */}
+      <AIAssistant />
+
+      {/* Chat da Comunidade Flutuante */}
       <CommunityChat currentProgram={currentProgram.name} />
 
       {/* Footer Profissional */}

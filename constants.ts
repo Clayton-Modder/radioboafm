@@ -11,6 +11,21 @@ export const MODELS = {
   MAPS: 'gemini-2.5-flash'
 };
 
+export interface Host {
+  id: string;
+  name: string;
+  avatar: string;
+}
+
+export const HOSTS: Host[] = [
+  { id: 'h1', name: 'Rivamar Mesquita', avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150' },
+  { id: 'h2', name: 'Cláudio Roseno', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=150' },
+  { id: 'h3', name: 'Jaqueline Mendes', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=150' },
+  { id: 'h4', name: 'Ney Moreno', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=150' },
+  { id: 'h5', name: 'Bebeto Oliveira', avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=150' },
+  { id: 'h6', name: 'Luanne Trotta', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=150' }
+];
+
 export const SCHEDULE: Program[] = [
   {
     id: '1',

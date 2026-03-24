@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPTV Player Universal</title>
+    
+    <!-- Plyr.js CSS -->
+    <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #000428 0%, #004e92 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            color: white;
+        }
+
+        .player-container {
+            width: 100%;
+            max-width: 1200px;
+            height: 100vh;
+            position: relative;
+            background: #000;
+        }
+
+        .plyr {
+            height: 100% !important;
+            background: #000 !important;
+        }
+
+        .plyr__video-wrapper {
+            background: #000;
+        }
+
+        /* Status Overlay */
+        .status-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .status-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .status-indicator {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+
+        .status-live {
+            color: #00ff88;
+        }
+
+        .status-offline {
+            color: #ff4444;
+        }
+
+        .status-title {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .status-subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        .loader {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-top: 4px solid #00ff88;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        /* Config Panel */
+        .config-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .config-group {
+            margin-bottom: 10px;
+        }
+
+        .config-group label {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            color: #ccc;
+        }
+
+        .config-group input {
+            width: 200px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .config-group input::placeholder {
+            color: #888;
+        }
+
+        button.config-btn {
+            background: linear-gradient(45deg, #00ff88, #00cc6a);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: transform 0.2s;
+        }
+
+        button.config-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Animations */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .config-panel {
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                right: 10px;
+                max-width: none;
+            }
+
+            .config-group input {
+                width: 100%;
+            }
+
+            .status-title {
+                font-size: 1.8rem;
+            }
+
+            .status-indicator {
+                font-size: 3rem;
+            }
+        }
+
+        /* Custom Plyr theme */
+        .plyr--video .plyr__control--overlaid {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 50%;
+        }
+
+        .plyr__menu__container {
+            background: rgba(0, 0, 0, 0.95);
+        }
+    </style>
+</head>
+<body>
+    <div class="player-container">
+        <!-- Configuração Panel -->
+        <div class="config-panel">
+            <div class="config-group">
+                <label>URL do Stream (.m3u8):</label>
+                <input type="url" id="streamUrl" placeholder="https://example.com/stream.m3u8" />
+            </div>
+            <div class="config-group">
+                <label>User-Agent:</label>
+                <input type="text" id="userAgent" placeholder="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" />
+            </div>
+            <div class="config-group">
+                <label>Referer:</label>
+                <input type="url" id="referer" placeholder="https://example.com" />
+            </div>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <label style="display: flex; align-items: center; gap: 5px; font-size: 0.9rem;">
+                    <input type="checkbox" id="autoplay" checked /> Autoplay
+                </label>
+                <label style="display: flex; align-items: center; gap: 5px; font-size: 0.9rem;">
+                    <input type="checkbox" id="proxy" /> Proxy CORS
+                </label>
+            </div>
+            <button class="config-btn" onclick="loadStream()">🔥 CARREGAR STREAM</button>
+        </div>
+
+        <!-- Player -->
+        <video id="player" playsinline controls crossorigin="anonymous">
+            Seu navegador não suporta reprodução de vídeo HTML5.
+        </video>
+
+        <!-- Status Overlay -->
+        <div class="status-overlay" id="statusOverlay">
+            <div class="loader"></div>
+            <div class="status-indicator" id="statusIndicator">⏳</div>
+            <div class="status-title" id="statusTitle">Conectando...</div>
+            <div class="status-subtitle" id="statusSubtitle">Aguardando stream...</div>
+        </div>
+    </div>
+
+    <!-- CDN Libraries -->
+    <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
+
+    <script>
+        class IPTVPlayer {
+            constructor() {
+                this.player = null;
+                this.hls = null;
+                this.retryCount = 0;
+                this.maxRetries = 5;
+                this.retryTimeout = 3000;
+                this.streamTimeout = 15000;
+                this.isNativeHLS = false;
+                this.statusOverlay = document.getElementById('statusOverlay');
+                this.statusTitle = document.getElementById('statusTitle');
+                this.statusSubtitle = document.getElementById('statusSubtitle');
+                this.statusIndicator = document.getElementById('statusIndicator');
+                
+                this.initPlayer();
+                this.bindEvents();
+            }
+
+            initPlayer() {
+                const video = document.getElementById('player');
+                
+                this.player = new Plyr(video, {
+                    controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'settings', 'fullscreen'],
+                    settings: ['quality', 'speed'],
+                    quality: { default: 'auto', options: ['auto', '1080p', '720p', '480p', '360p'] },
+                    speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] },
+                    loadSprite: true,
+                    iconUrl: 'https://cdn.plyr.io/3.7.8/plyr.svg',
+                    tooltips: { controls: true, seek: true }
+                });
+
+                this.showStatus('loader', 'Inicializando player...', 'Configurando suporte HLS...');
+            }
+
+            bindEvents() {
+                const video = document.getElementById('player');
+                
+                video.addEventListener('loadedmetadata', () => {
+                    this.hideStatus();
+                    this.retryCount = 0;
+                });
+
+                video.addEventListener('error', (e) => {
+                    console.error('Video error:', e);
+                    this.handleError('Erro na reprodução do vídeo');
+                });
+
+                this.player.on('error', (event) => {
+                    console.error('Plyr error:', event);
+                    this.handleError('Erro no player');
+                });
+            }
+
+            async loadStream(url = null) {
+                const streamUrl = url || document.getElementById('streamUrl').value.trim();
+                
+                if (!streamUrl) {
+                    this.showError('Por favor, insira uma URL válida do stream (.m3u8)');
+                    return;
+                }
+
+                this.showStatus('loader', 'Conectando...', `Carregando: ${streamUrl}`);
+                
+                // Reset player
+                if (this.hls) {
+                    this.hls.destroy();
+                    this.hls = null;
+                }
+                
+                const video = document.getElementById('player');
+                video.src = '';
+                video.load();
+
+                // Configurações customizadas
+                const userAgent = document.getElementById('userAgent').value || 
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+                const referer = document.getElementById('referer').value;
+                const useProxy = document.getElementById('proxy').checked;
+                const autoplay = document.getElementById('autoplay').checked;
+
+                // Proxy CORS se necessário (para streams bloqueados)
+                let finalUrl = streamUrl;
+                if (useProxy) {
+                    finalUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(streamUrl)}`;
+                }
+
+                // Detectar suporte nativo HLS (Safari/iOS)
+                this.isNativeHLS = Hls.isSupported() && !Hls.isSafari() && !/iPad|iPhone|iPod/.test(navigator.userAgent);
+
+                if (Hls.isSupported() && !this.isNativeHLS) {
+                    // Usar Hls.js
+                    this.hls = new Hls({
+                        enableWorker: true,
+                        lowLatencyMode: true,
+                        backBufferLength: 90,
+                        maxBufferLength: 60,
+                        maxMaxBufferLength: 600,
+                        liveSyncDurationCount: 3,
+                        liveMaxLatencyDurationCount: 10,
+                        p2pEnabled: false,
+                        xhrSetup: (xhr, url) => {
+                            xhr.setRequestHeader('User-Agent', userAgent);
+                            if (referer) xhr.setRequestHeader('Referer', referer);
+                            xhr.timeout = this.streamTimeout;
+                        },
+                        debug: false
+                    });
+
+                    this.hls.loadSource(finalUrl);
+                    this.hls.attachMedia(video);
+
+                    this.hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                        this.onStreamLoaded();
+                    });
+
+                    this.hls.on(Hls.Events.ERROR, (event, data) => {
+                        this.handleHlsError(data);
+                    });
+
+                } else {
+                    // Suporte nativo (Safari)
+                    video.src = finalUrl;
+                    video.addEventListener('loadedmetadata', () => {
+                        this.onStreamLoaded();
+                    }, { once: true });
+                    
+                    video.addEventListener('error', () => {
+                        this.handleError('Stream não suportado neste navegador');
+                    }, { once: true });
+                }
+
+                if (autoplay) {
+                    video.play().catch(e => {
+                        console.log('Autoplay bloqueado:', e);
+                    });
+                }
+            }
+
+            onStreamLoaded() {
+                this.showStatus('live', '🔴 AO VIVO', 'Stream conectado com sucesso!');
+                setTimeout(() => this.hideStatus(), 2000);
+            }
+
+            handleHlsError(data) {
+                console.error('HLS Error:', data);
+                
+                if (data.fatal) {
+                    switch (data.type) {
+                        case Hls.ErrorTypes.NETWORK_ERROR:
+                            this.retryStream();
+                            break;
+                        case Hls.ErrorTypes.MEDIA_ERROR:
+                            this.hls.recoverMediaError();
+                            break;
+                        default:
+                            this.hls.destroy();
+                            this.handleError('Erro irrecuperável no stream');
+                            break;
+                    }
+                }
+            }
+
+            async retryStream() {
+                if (this.retryCount < this.maxRetries) {
+                    this.retryCount++;
+                    this.showStatus('loader', 'Reconectando...', 
+                        `Tentativa ${this.retryCount}/${this.maxRetries} em ${this.retryTimeout/1000}s...`);
+                    
+                    setTimeout(() => {
+                        this.loadStream();
+                    }, this.retryTimeout * this.retryCount);
+                } else {
+                    this.handleError('Stream offline após várias tentativas');
+                }
+            }
+
+            handleError(message) {
+                this.showStatus('offline', '❌ OFFLINE', 
+                    `${message}<br><small>Clique em "CARREGAR STREAM" para tentar novamente</small>`);
+            }
+
+            showStatus(type, title, subtitle) {
+                this.statusTitle.innerHTML = title;
+                this.statusSubtitle.innerHTML = subtitle;
+                this.statusIndicator.textContent = type === 'live' ? '🔴' : 
+                                                 type === 'offline' ? '❌' : '⏳';
+                this.statusIndicator.className = `status-indicator status-${type}`;
+                this.statusOverlay.classList.remove('hidden');
+            }
+
+            hideStatus() {
+                this.statusOverlay.classList.add('hidden');
+            }
+
+            // Timeout detector
+            checkStreamHealth() {
+                const video = document.getElementById('player');
+                if (video.networkState === video.NETWORK_NO_SOURCE || 
+                    video.readyState === video.HAVE_NOTHING) {
+                    this.retryStream();
+                }
+            }
+        }
+
+        // Inicializar player
+        const player = new IPTVPlayer();
+
+        // Função global para carregar stream
+        window.loadStream = () => {
+            player.loadStream();
+        };
+
+        // Enter no input para carregar
+        document.getElementById('streamUrl').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                loadStream();
+            }
+        });
+
+        // Exemplo de stream para teste (remover em produção)
+        window.addEventListener('load', () => {
+            // document.getElementById('streamUrl').value = 'https://cinetvembed.bond/live/joel-vods/h89Jsw/1234.m3u8';
+        });
+    </script>
+</body>
+</html>
